@@ -1,5 +1,5 @@
 from flask import Flask, render_template, session, redirect, url_for, flash
-from flask_script import Manager
+from flask_script import Manager, Shell
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from datetime import datetime
@@ -13,8 +13,8 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'hard to guess string'
-app.config['SQLALCHEMY_DATABASE_URL'] =\
-    'sqlite:///' + os.path.join(basedir, 'data.sqlite')
+app.config['SQLALCHEMY_DATABASE_URI'] =\
+    'sqlite:///' + os.path.join(basedir, 'data.sqlite')     # URI, not URL!
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 
 db = SQLAlchemy(app)
@@ -73,6 +73,11 @@ def page_not_found(e):
 def internal_server_error(e):
     return render_template('500.html'), 500
     
+def make_shell_context():
+    return dict(app=app, db=db, User=User, Role=Role)
+    
+manager.add_command("shell", Shell(make_context=make_shell_context))
+
 if __name__ == '__main__':
     db.create_all()
     manager.run()
