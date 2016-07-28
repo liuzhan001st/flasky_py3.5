@@ -9,6 +9,7 @@ from wtforms.validators import Required
 import os
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate, MigrateCommand
+from flask_mail import Mail, Message
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -18,10 +19,20 @@ app.config['SQLALCHEMY_DATABASE_URI'] =\
     'sqlite:///' + os.path.join(basedir, 'data.sqlite')     # URI, not URL!
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 
+app.config['MAIL_SERVER'] = 'smtp.163.com'
+app.config['MAIL_PORT'] = 25
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+app.config['FLASY_MAIL_SUBJECT_PREFIX'] = '[Flasky_py3.5]'
+app.config['FLASKY_MAIL_SENDER'] = 'liuzhan002nd <liuzhan002nd@163.com>'
+app.config['FLASKY_ADMIN'] = os.environ.get('FLASKY_ADMIN')
+
 db = SQLAlchemy(app)
 manager = Manager(app)
 bootstrap = Bootstrap(app)
 moment = Moment(app)
+mail = Mail(app)
 
 class Role(db.Model):
     __tablename__ = 'roles'
@@ -45,6 +56,13 @@ class NameForm(Form):
     name = StringField('What is your name?', validators=[Required()])
     submit = SubmitField('Submit')
 
+def send_email(to, subject, template, **kwargs):
+        msg = Message(app.config['FLASY_MAIL_SUBJECT_PREFIX'] + subject, 
+                      sender=app.config['FLASKY_MAIL_SENDER'], recipients=[to])
+        msg.body = render_template(template + '.txt', **kwargs)
+        msg.html = render_template(template +'.html', **kwargs)
+        mail.send(msg)
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     form = NameForm()
@@ -54,6 +72,9 @@ def index():
             user = User(username = form.name.data)
             db.session.add(user)
             session['known'] = False
+            if app.config['FLASKY_ADMIN']:
+                send_email(app.config['FLASKY_ADMIN'], 'New User', 
+                           'mail/new_user', user=user)
         else:
             session['known'] = True
         session['name'] = form.name.data
@@ -84,5 +105,5 @@ migrate = Migrate(app, db)
 manager.add_command('db', MigrateCommand)
 
 if __name__ == '__main__':
-    db.create_all()
+    #db.create_all()
     manager.run()
