@@ -4,7 +4,7 @@ from flask_login import login_required, current_user
 from . import main
 from .forms import EditProfileForm, EditProfileAdminForm, PostForm
 from .. import db
-from ..models import Permission, Role, User, Role, Post
+from ..models import Permission, Role, User, Post
 from ..decorators import admin_required
 
 @main.route('/', methods=['GET', 'POST'])
