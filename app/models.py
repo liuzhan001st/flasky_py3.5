@@ -221,9 +221,10 @@ class User(UserMixin, db.Model):
     def is_followed_by(self, user):
         return self.followers.filter_by(
             follower_id=user.id).first() is not None
-            
+    
+    # Decorate as property to protect the value and avoid using of '()' when invoked.
     @property
-    def fllowed_post(self):
+    def followed_posts(self):
         return Post.query.join(Follow, Follow.followed_id == Post.author_id)\
             .filter(Follow.follower_id == self.id)
     
